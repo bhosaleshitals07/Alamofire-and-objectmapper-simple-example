@@ -1,0 +1,183 @@
+view controller
+
+
+//
+//  ViewController.swift
+//  TriyalJSON
+//
+//  Created by Mac on 19/02/19.
+//  Copyright © 2019 shital. All rights reserved.
+//
+
+import UIKit
+class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSource {
+    @IBOutlet weak var mytable: UITableView!
+    var arrmain = [GETArrayData]()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        getdata()
+        // Do any additional setup after loading the view, typically from a nib.
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+func getdata()
+{
+    let dict = [
+        "name":"shital",
+        "address":"pune"
+    ]
+    APIManager.sharedInstance.getdata(parms: dict, onsuccess: { (responsedata, anystring) in
+        print(responsedata,anystring)
+        self.arrmain = responsedata
+        let str = self.arrmain[0]
+        print("Email-",str.email)
+        self.mytable.reloadData()
+    }) { (error1, error2) in
+        print(error1,error2)
+    }
+    }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.arrmain.count
+    }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+                let cell:UITableViewCell = mytable.dequeueReusableCell(withIdentifier: "TableViewCell") as! UITableViewCell
+        let str1 = self.arrmain[indexPath.row]
+        cell.textLabel?.text = str1.email
+        
+        return cell
+        
+    }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 400.0
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let obj = storyboard?.instantiateViewController(withIdentifier: "ViewControllerFrist") as! ViewControllerFrist
+//        ViewControllerFrist.arrpass = self.arrmain
+        var strpass = self.arrmain[indexPath.row]
+        obj.arrpass = [strpass]
+   // obj.arrpass = self.arrmain
+        
+        self.navigationController? .pushViewController(obj, animated: true)
+    }
+}
+
+APIManager-----------------------
+
+
+//
+//  APIManager.swift
+//  TriyalJSON
+//
+//  Created by Mac on 19/02/19.
+//  Copyright © 2019 shital. All rights reserved.
+//
+
+import UIKit
+import Foundation
+import Alamofire
+import ObjectMapper
+class APIManager: NSObject {
+    
+    static let sharedInstance = APIManager()
+    
+    func getdata(parms:[String:Any], onsuccess:@escaping([GETArrayData],String?) ->Void,onfailure:@escaping(String?,String?) ->Void)
+    {
+        let url = URL.init(string: "https://jsonplaceholder.typicode.com/comments")
+        
+        let headrs : HTTPHeaders = ["content-type":"application/json"]
+        Alamofire.request(url!, method: .get, parameters: parms, encoding: JSONEncoding.default, headers: headrs).responseJSON
+            {
+                response in
+                switch response.result{
+                case .success:
+                    
+//                    let string = NSString(data: response.data!, encoding: String.Encoding.utf8.rawValue)
+//                    print("string:\(String(describing: string))")
+                    do{
+                        let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! AnyObject
+                        //let userdetails = Mapper<DataClasss>() .mapArray(JSONObject: jsonResponse)
+//                        let userdetalis = Mapper<GETArrayData>() .mapArray(JSONString: jsonResponse)
+                        let userdetails = Mapper<GETArrayData>() .mapArray(JSONObject: jsonResponse)
+                        print(jsonResponse)
+                        if jsonResponse != nil
+                        {
+                            onsuccess(userdetails!,"success")
+                        }
+                        else
+                        {
+                            onfailure((response.error?.localizedDescription)!,"fail")
+                        }
+                        
+                    }catch let parsingError{
+                        
+                        print("error",parsingError)
+                        onfailure((response.error?.localizedDescription)!,"fail")
+                    }
+                    break
+                case.failure(let error):
+                    
+                    print(error)
+                    onfailure((response.error?.localizedDescription)!,"fail")
+                }
+                
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+}
+
+
+
+
+frist view controller------------
+
+//
+//  ViewControllerFrist.swift
+//  TriyalJSON
+//
+//  Created by Mac on 20/02/19.
+//  Copyright © 2019 shital. All rights reserved.
+//
+
+import UIKit
+
+class ViewControllerFrist: UIViewController,UITableViewDelegate,UITableViewDataSource {
+    var arrpass = [GETArrayData]()
+    static let fristobject = ViewControllerFrist()
+    @IBOutlet weak var mytableView: UITableView!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Do any additional setup after loading the view.
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        print(self.arrpass.count)
+        return self.arrpass.count
+        
+    }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell:TableViewCell = mytableView.dequeueReusableCell(withIdentifier: "TableViewCell") as! TableViewCell
+        let str = self.arrpass[indexPath.row]
+        cell.textLabel1.text = str.email
+        cell.textLabel2.text = "\(str.id)"
+        
+        return cell
+    }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 300.0
+    }
+
+}
